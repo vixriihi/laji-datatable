@@ -152,7 +152,8 @@ export declare class DatatableComponent implements OnInit, DoCheck, AfterViewIni
      * Array of sorted columns by property and type.
      * Default value: `[]`
      */
-    sorts: any[];
+    _sorts: any[];
+    sorts: any;
     /**
      * Css class overrides
      */
@@ -386,6 +387,11 @@ export declare class DatatableComponent implements OnInit, DoCheck, AfterViewIni
     _columns: TableColumn[];
     _columnTemplates: QueryList<DataTableColumnDirective>;
     _subscriptions: Subscription[];
+    /**
+     * Completes when component is fully initialized
+     */
+    initializationState: EventEmitter<string>;
+    private _bs;
     constructor(scrollbarHelper: ScrollbarHelper, dimensionsHelper: DimensionsHelper, cd: ChangeDetectorRef, element: ElementRef, differs: KeyValueDiffers, columnChangesService: ColumnChangesService);
     /**
      * Lifecycle hook that is called after data-bound

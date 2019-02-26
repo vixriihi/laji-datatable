@@ -12,7 +12,7 @@ import {
   groupRowsByParents, optionalGetterForProp
 } from '../utils';
 import { ScrollbarHelper, DimensionsHelper, ColumnChangesService } from '../services';
-import { ColumnMode, SortType, SelectionType, TableColumn, ContextmenuType } from '../types';
+import { ColumnMode, SortType, SelectionType, TableColumn, ContextmenuType, SortDirection } from '../types';
 import { DataTableBodyComponent } from './body';
 import { DatatableGroupHeaderDirective } from './body/body-group-header.directive';
 import { DataTableColumnDirective } from './columns';
@@ -21,6 +21,9 @@ import { DatatableFooterDirective } from './footer';
 import { DataTableHeaderComponent } from './header';
 import { MouseEvent } from '../events';
 import { BehaviorSubject, Subscription } from 'rxjs';
+import { filter, tap } from 'rxjs/operators';
+
+type InitBuffer = 'afterViewInit' | 'rows' | 'columns' | 'sorts';
 
 @Component({
   selector: 'ngx-datatable',
@@ -150,6 +153,11 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
       this.groupedRows = this.groupArrayBy(this._rows, this._groupRowsBy);
     }
 
+    if (this._rows && this._rows.length > 0) {
+      this._bs.value.pop();
+      this._bs.next(this._bs.getValue());
+    }
+
     this.cd.markForCheck();
   }
 
@@ -205,6 +213,11 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
     }
 
     this._columns = val;
+
+    if(this._columns && this._columns.length > 0) {
+      this._bs.value.pop();
+      this._bs.next(this._bs.getValue());
+    }
   }
 
   /**
@@ -355,7 +368,18 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
    * Array of sorted columns by property and type.
    * Default value: `[]`
    */
-  @Input() sorts: any[] = [];
+  _sorts: any[] = [];
+  @Input() set sorts(sorts) {
+    this._sorts = sorts;
+    if (this._sorts.length > 0) {
+      if(!this.externalSorting) this.sortInternalRows();
+      this._bs.value.pop();
+      this._bs.next(this._bs.getValue());
+    }
+  }
+  get sorts() {
+    return this._sorts;
+  }
 
   /**
    * Css class overrides
@@ -708,6 +732,13 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
   _columnTemplates: QueryList<DataTableColumnDirective>;
   _subscriptions: Subscription[] = [];
 
+  /**
+   * Completes when component is fully initialized
+   */
+  initializationState: EventEmitter<string> = new EventEmitter<string>();
+
+  private _bs: BehaviorSubject<InitBuffer[]>;
+
   constructor(
     @SkipSelf() private scrollbarHelper: ScrollbarHelper,
     @SkipSelf() private dimensionsHelper: DimensionsHelper,
@@ -719,6 +750,9 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
     // get ref to elm for measuring
     this.element = element.nativeElement;
     this.rowDiffer = differs.find({}).create();
+
+    const buffer: InitBuffer[] = ['afterViewInit', 'rows', 'columns', 'sorts'];
+    this._bs = new BehaviorSubject(buffer);
   }
 
   /**
@@ -737,8 +771,23 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
    * view has been fully initialized.
    */
   ngAfterViewInit(): void {
-    if (!this.externalSorting) {
-      this.sortInternalRows();
+    this._bs.pipe(
+      filter(val => val.length === 0)
+    ).subscribe(() => {
+      this.initializationState.next('complete');
+    });
+
+    if (this._internalRows && this._internalRows.length > 0) {
+      this._bs.value.pop();
+      this._bs.next(this._bs.getValue());
+    }
+    if (this._internalColumns && this._internalColumns.length > 0) {
+      this._bs.value.pop();
+      this._bs.next(this._bs.getValue());
+    }
+    if (this.sorts && this.sorts.length > 0) {
+      this._bs.value.pop();
+      this._bs.next(this._bs.getValue());
     }
 
     // this has to be done to prevent the change detection
@@ -760,6 +809,9 @@ export class DatatableComponent implements OnInit, DoCheck, AfterViewInit {
         });
       }
     });
+
+    this._bs.value.pop();
+    this._bs.next(this._bs.getValue());
   }
 
   /**

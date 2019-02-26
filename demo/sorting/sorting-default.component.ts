@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { DatatableComponent } from '../../src';
 
 @Component({
   selector: 'default-sorting-demo',
@@ -12,7 +13,7 @@ import { Component, OnInit } from '@angular/core';
           </a>
         </small>
       </h3>
-      <ngx-datatable
+      <ngx-datatable #dataTable
         class="material"
         [rows]="rows"
         [columnMode]="'force'"
@@ -41,6 +42,8 @@ import { Component, OnInit } from '@angular/core';
   `
 })
 export class DefaultSortingComponent implements OnInit {
+
+  @ViewChild('dataTable') public datatable: DatatableComponent;
 
   rows = [];
 

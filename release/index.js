@@ -1067,9 +1067,9 @@ var DataTableBodyRowComponent = /** @class */ (function () {
         return column.$$id;
     };
     DataTableBodyRowComponent.prototype.buildStylesByGroup = function () {
-        this._groupStyles['left'] = this.calcStylesByGroup('left');
-        this._groupStyles['center'] = this.calcStylesByGroup('center');
-        this._groupStyles['right'] = this.calcStylesByGroup('right');
+        this._groupStyles.left = this.calcStylesByGroup('left');
+        this._groupStyles.center = this.calcStylesByGroup('center');
+        this._groupStyles.right = this.calcStylesByGroup('right');
         this.cd.markForCheck();
     };
     DataTableBodyRowComponent.prototype.calcStylesByGroup = function (group) {
@@ -2795,6 +2795,7 @@ var row_detail_1 = __webpack_require__("./src/components/row-detail/index.ts");
 var footer_1 = __webpack_require__("./src/components/footer/index.ts");
 var header_1 = __webpack_require__("./src/components/header/index.ts");
 var rxjs_1 = __webpack_require__("rxjs");
+var operators_1 = __webpack_require__("rxjs/operators");
 var DatatableComponent = /** @class */ (function () {
     function DatatableComponent(scrollbarHelper, dimensionsHelper, cd, element, differs, columnChangesService) {
         this.scrollbarHelper = scrollbarHelper;
@@ -2868,7 +2869,7 @@ var DatatableComponent = /** @class */ (function () {
          * Array of sorted columns by property and type.
          * Default value: `[]`
          */
-        this.sorts = [];
+        this._sorts = [];
         /**
          * Css class overrides
          */
@@ -2976,9 +2977,15 @@ var DatatableComponent = /** @class */ (function () {
         this._count = 0;
         this._offset = 0;
         this._subscriptions = [];
+        /**
+         * Completes when component is fully initialized
+         */
+        this.initializationState = new core_1.EventEmitter();
         // get ref to elm for measuring
         this.element = element.nativeElement;
         this.rowDiffer = differs.find({}).create();
+        var buffer = ['afterViewInit', 'rows', 'columns', 'sorts'];
+        this._bs = new rxjs_1.BehaviorSubject(buffer);
     }
     Object.defineProperty(DatatableComponent.prototype, "rows", {
         /**
@@ -3006,6 +3013,10 @@ var DatatableComponent = /** @class */ (function () {
             if (this._rows && this._groupRowsBy) {
                 // If a column has been specified in _groupRowsBy created a new array with the data grouped by that row
                 this.groupedRows = this.groupArrayBy(this._rows, this._groupRowsBy);
+            }
+            if (this._rows && this._rows.length > 0) {
+                this._bs.value.pop();
+                this._bs.next(this._bs.getValue());
             }
             this.cd.markForCheck();
         },
@@ -3048,6 +3059,10 @@ var DatatableComponent = /** @class */ (function () {
                 this.recalculateColumns();
             }
             this._columns = val;
+            if (this._columns && this._columns.length > 0) {
+                this._bs.value.pop();
+                this._bs.next(this._bs.getValue());
+            }
         },
         enumerable: true,
         configurable: true
@@ -3100,6 +3115,22 @@ var DatatableComponent = /** @class */ (function () {
          */
         set: function (val) {
             this._offset = val;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DatatableComponent.prototype, "sorts", {
+        get: function () {
+            return this._sorts;
+        },
+        set: function (sorts) {
+            this._sorts = sorts;
+            if (this._sorts.length > 0) {
+                if (!this.externalSorting)
+                    this.sortInternalRows();
+                this._bs.value.pop();
+                this._bs.next(this._bs.getValue());
+            }
         },
         enumerable: true,
         configurable: true
@@ -3273,8 +3304,20 @@ var DatatableComponent = /** @class */ (function () {
      */
     DatatableComponent.prototype.ngAfterViewInit = function () {
         var _this = this;
-        if (!this.externalSorting) {
-            this.sortInternalRows();
+        this._bs.pipe(operators_1.filter(function (val) { return val.length === 0; })).subscribe(function () {
+            _this.initializationState.next('complete');
+        });
+        if (this._internalRows && this._internalRows.length > 0) {
+            this._bs.value.pop();
+            this._bs.next(this._bs.getValue());
+        }
+        if (this._internalColumns && this._internalColumns.length > 0) {
+            this._bs.value.pop();
+            this._bs.next(this._bs.getValue());
+        }
+        if (this.sorts && this.sorts.length > 0) {
+            this._bs.value.pop();
+            this._bs.next(this._bs.getValue());
         }
         // this has to be done to prevent the change detection
         // tree from freaking out because we are readjusting
@@ -3293,6 +3336,8 @@ var DatatableComponent = /** @class */ (function () {
                 });
             }
         });
+        this._bs.value.pop();
+        this._bs.next(this._bs.getValue());
     };
     /**
      * Lifecycle hook that is called after a component's
@@ -3788,8 +3833,9 @@ var DatatableComponent = /** @class */ (function () {
     ], DatatableComponent.prototype, "sortType", void 0);
     __decorate([
         core_1.Input(),
-        __metadata("design:type", Array)
-    ], DatatableComponent.prototype, "sorts", void 0);
+        __metadata("design:type", Object),
+        __metadata("design:paramtypes", [Object])
+    ], DatatableComponent.prototype, "sorts", null);
     __decorate([
         core_1.Input(),
         __metadata("design:type", Object)
@@ -4890,9 +4936,9 @@ var DataTableHeaderComponent = /** @class */ (function () {
         return sorts;
     };
     DataTableHeaderComponent.prototype.setStylesByGroup = function () {
-        this._styleByGroup['left'] = this.calcStylesByGroup('left');
-        this._styleByGroup['center'] = this.calcStylesByGroup('center');
-        this._styleByGroup['right'] = this.calcStylesByGroup('right');
+        this._styleByGroup.left = this.calcStylesByGroup('left');
+        this._styleByGroup.center = this.calcStylesByGroup('center');
+        this._styleByGroup.right = this.calcStylesByGroup('right');
         this.cd.detectChanges();
     };
     DataTableHeaderComponent.prototype.calcStylesByGroup = function (group) {
