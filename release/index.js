@@ -7400,9 +7400,9 @@ exports.translateXY = translateXY;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var _1 = __webpack_require__("./src/utils/index.ts");
+var column_prop_getters_1 = __webpack_require__("./src/utils/column-prop-getters.ts");
 function optionalGetterForProp(prop) {
-    return prop && (function (row) { return _1.getterForProp(prop)(row, prop); });
+    return prop && (function (row) { return column_prop_getters_1.getterForProp(prop)(row, prop); });
 }
 exports.optionalGetterForProp = optionalGetterForProp;
 /**
