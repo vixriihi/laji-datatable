@@ -88,7 +88,7 @@ type InitBuffer = 'afterViewInit' | 'rows' | 'columns' | 'sorts';
         (activate)="activate.emit($event)"
         (rowContextmenu)="onRowContextmenu($event)"
         (select)="onBodySelect($event)"
-        (scroll)="onBodyScroll($event)"
+        (bodyscroll)="onBodyScroll($event)"
         (treeAction)="onTreeAction($event)">
       </datatable-body>
       <datatable-footer

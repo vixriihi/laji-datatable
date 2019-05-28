@@ -21,7 +21,7 @@ var DataTableBodyComponent = /** @class */ (function () {
         var _this = this;
         this.cd = cd;
         this.selected = [];
-        this.scroll = new core_1.EventEmitter();
+        this.bodyscroll = new core_1.EventEmitter();
         this.page = new core_1.EventEmitter();
         this.activate = new core_1.EventEmitter();
         this.select = new core_1.EventEmitter();
@@ -234,19 +234,19 @@ var DataTableBodyComponent = /** @class */ (function () {
     DataTableBodyComponent.prototype.onBodyScroll = function (event) {
         var scrollYPos = event.scrollYPos;
         var scrollXPos = event.scrollXPos;
-        // if scroll change, trigger update
-        // this is mainly used for header cell positions
         if (this.offsetY !== scrollYPos || this.offsetX !== scrollXPos) {
-            this.scroll.emit({
+            this.offsetY = scrollYPos;
+            this.offsetX = scrollXPos;
+            this.updateIndexes();
+            this.updatePage(event.direction);
+            this.updateRows();
+            // if scroll change, trigger update
+            // this is mainly used for header cell positions
+            this.bodyscroll.emit({
                 offsetY: scrollYPos,
                 offsetX: scrollXPos
             });
         }
-        this.offsetY = scrollYPos;
-        this.offsetX = scrollXPos;
-        this.updateIndexes();
-        this.updatePage(event.direction);
-        this.updateRows();
     };
     /**
      * Updates the page given a direction.
@@ -717,7 +717,7 @@ var DataTableBodyComponent = /** @class */ (function () {
     __decorate([
         core_1.Output(),
         __metadata("design:type", core_1.EventEmitter)
-    ], DataTableBodyComponent.prototype, "scroll", void 0);
+    ], DataTableBodyComponent.prototype, "bodyscroll", void 0);
     __decorate([
         core_1.Output(),
         __metadata("design:type", core_1.EventEmitter)
